@@ -96,11 +96,12 @@ if(state.canvas){
   state.ctx = state.canvas.getContext('2d');
   state.W = state.canvas.width; state.H = state.canvas.height;
 }
-state.asteroidImg.src = '../img/a.png';
-state.bgImg.src = '../img/background.jpg';
+// asset paths should be relative to the served document (index.html) which is at project root
+state.asteroidImg.src = 'img/a.png';
+state.bgImg.src = 'img/background.jpg';
 state.bgmAudio.loop = true; state.bgmAudio.volume = 0.5;
-state.playerImg.src = '../img/player.png';
-state.bossImg.src = '../img/boss.png';
+state.playerImg.src = 'img/player.png';
+state.bossImg.src = 'img/boss.png';
 
 // helpers
 export function rand(min,max){return Math.random()*(max-min)+min}
