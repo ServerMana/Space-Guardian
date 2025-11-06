@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>운석 피하기</title>
+  <link rel="stylesheet" href="./css/style.css">
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>운석 피하기</h1>
+        <div class="small"></div>
+      </div>
+      <div class="topbar">
+        <div class="row">
+          <label class="small" for="difficulty">난이도</label>
+          <select id="difficulty">
+            <option value="NORMAL">보통</option>
+            <option value="HARD">어려움</option>
+            <option value="EXTREME">극한</option>
+          </select>
+        </div>
+        <div style="width:12px"></div>
+        <div class="row">
+          <label class="small" for="langSelect">언어</label>
+          <select id="langSelect">
+            <option value="ko">한국어</option>
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+          </select>
+        </div>
+        <div style="width:12px"></div>
+        <div class="controls">
+            <button id="startBtn">시작</button>
+          <button id="pauseBtn" class="secondary">일시정지</button>
+          <button id="resetBtn" class="secondary">리셋</button>
+            <button id="settingsBtn" class="secondary">설정</button>
+            <button id="infoToggleBtn" class="secondary">게임정보</button>
+        </div>
+      </div>
+    </header>
+    <div id="hud">
+      <div class="stat"><span class="label" data-i18n="label.health">체력</span>: <span id="health">3</span>/<span id="maxHealth">3</span></div>
+      <div class="stat"><span class="label" data-i18n="label.time">시간</span>: <span id="time">0.0</span><span class="suffix" data-i18n="suffix.seconds">초</span></div>
+      <div class="stat"><span class="label" data-i18n="label.score">점수</span>: <span id="score">0</span></div>
+      <div class="stat"><span class="label" data-i18n="label.bombDamage">폭탄 피해</span>: <span id="bombDmg">1</span></div>
+      <div class="stat"><span class="label" data-i18n="label.autoAttack">자동공격</span>: <span id="autoAttack" data-i18n-val="value.off">꺼짐</span></div>
+      <div class="stat"><span class="label" data-i18n="label.state">상태</span>: <span id="state" data-i18n-val="state.IDLE">대기</span></div>
+      <div class="stat" id="invincibleHudRow" style="display:none"><span class="label" data-i18n="item.INVINCIBLE.name">무적</span>: <span id="invincibleTimer">0.0</span><span class="suffix" data-i18n="suffix.seconds">초</span></div>
+    </div>
+
+    <!-- Settings modal -->
+    <div id="settingsModal" class="modal-overlay" style="display:none;">
+      <div class="modal-panel">
+        <h3 style="margin-top:0">설정</h3>
+        <div style="margin-top:8px">
+          <label class="small">화면 크기</label>
+          <select id="canvasSizeSelect" style="width:100%;margin-top:6px">
+            <option value="800x600">기본 (800×600)</option>
+            <option value="1024x768">중간 (1024×768)</option>
+            <option value="1280x720">넓게 (1280×720)</option>
+            <option value="fit">창에 맞춤 (fit)</option>
+            <option value="custom">사용자 지정</option>
+          </select>
+        </div>
+        <div id="customSizeRow" style="margin-top:8px;display:none">
+          <label class="small">사용자 지정 크기</label>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <input id="customWidth" type="number" min="300" max="2000" placeholder="너비(px)" style="flex:1;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);background:#071022;color:#e6eef8" />
+            <input id="customHeight" type="number" min="200" max="1200" placeholder="높이(px)" style="flex:1;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);background:#071022;color:#e6eef8" />
+          </div>
+        </div>
+        <div style="margin-top:12px">
+          <label class="small">BGM 볼륨 <span id="bgmVolumeLabel">50%</span></label>
+          <input id="bgmVolume" type="range" min="0" max="100" value="50" style="width:100%;margin-top:6px" />
+        </div>
+        <div style="margin-top:12px">
+          <label class="small">배경 이미지 (로컬 파일 선택)</label>
+          <input id="bgFile" type="file" accept="image/*" style="width:100%;margin-top:6px" />
+          <div class="small" id="bgFileName" style="margin-top:6px;color:var(--muted)"></div>
+          <button id="resetBg" class="secondary" style="margin-top:8px">배경 초기화</button>
+        </div>
+        <div style="margin-top:12px">
+          <label class="small">BGM 파일 (로컬 파일 선택)</label>
+          <input id="musicFile" type="file" accept="audio/*" style="width:100%;margin-top:6px" />
+          <div class="small" id="musicFileName" style="margin-top:6px;color:var(--muted)"></div>
+          <button id="resetMusic" class="secondary" style="margin-top:8px">음악 초기화</button>
+        </div>
+        <div style="margin-top:12px;text-align:right">
+          <button id="applySettings" class="secondary">적용</button>
+          <button id="closeSettings" class="secondary">닫기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Side panel: game description + item info -->
+    <div class="game-layout">
+      <div id="game-area">
+        <div class="canvas-controls">
+          <button id="centerScreenBtn" class="secondary">중앙 정렬</button>
+        </div>
+        <div style="position:relative;display:inline-block">
+          <canvas id="gameCanvas" width="800" height="600"></canvas>
+        </div>
+      </div>
+
+      <aside id="sidePanel">
+        <section id="gameDescription">
+          <h3>게임 설명</h3>
+          <div class="small" id="gameDescText" style="line-height:1.4">
+            플레이어는 화면 아래에서 우주선을 조종하여 운석을 피하거나 폭탄(Z)으로 파괴합니다.
+            운석은 여러 번의 공격이 필요한 경우가 있으며, 화면에 떠다니는 아이템을 획득하면 다양한 효과를 얻을 수 있습니다.
+            점수를 쌓으면 업그레이드 선택 창이 나타나며, 보스를 일정 점수에 맞춰 소환됩니다.
+          </div>
+        </section>
+
+        <section id="itemInfo">
+          <h3>아이템 정보</h3>
+          <div class="small" style="line-height:1.4">
+            아래 아이콘은 게임 내에서 보이는 실제 아이템 모양을 보여줍니다.
+          </div>
+          <ul class="item-list" style="list-style:none;padding:0;margin-top:8px">
+            <li style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><canvas class="item-icon" data-type="INVINCIBLE" width="36" height="36"></canvas><strong>INVINCIBLE</strong> — 일정 시간 무적</li>
+            <li style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><canvas class="item-icon" data-type="RECOVER" width="36" height="36"></canvas><strong>RECOVER</strong> — 즉시 체력 1 회복</li>
+            <li style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><canvas class="item-icon" data-type="SPEED_UP" width="36" height="36"></canvas><strong>SPEED_UP</strong> — 속도 증가 (짧음)</li>
+            <li style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><canvas class="item-icon" data-type="SLOW_DOWN" width="36" height="36"></canvas><strong>SLOW_DOWN</strong> — 운석 속도 감소 (짧음)</li>
+            <li style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><canvas class="item-icon" data-type="AUTO_HEAL" width="36" height="36"></canvas><strong>AUTO_HEAL</strong> — 초당 자동 회복 (짧음)</li>
+          </ul>
+        </section>
+      </aside>
+    </div>
+
+    <!-- Upgrade modal (hidden by default) -->
+    <div id="upgradeModal" class="modal-overlay" style="display:none;">
+      <div class="modal-panel">
+        <h3 id="upgradeTitle" style="margin-top:0">업그레이드 획득!</h3>
+        <p id="upgradeDesc" class="small">원하는 업그레이드를 선택하세요:</p>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button id="upgradeMaxHealth" class="secondary">최대 체력 +1</button>
+          <button id="upgradeBombDmg" class="secondary">폭탄 피해 +1</button>
+          <button id="upgradeAutoAttack" class="secondary">자동공격 활성화</button>
+        </div>
+        <div style="margin-top:12px;text-align:right">
+          <button id="upgradeCancel" class="secondary">취소</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- footer moved into game description -->
+    <footer style="display:none"></footer>
+  </div>
+
+  <script type="module" src="./js/game.js"></script>
+</body>
+</html>
